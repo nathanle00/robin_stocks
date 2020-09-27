@@ -2,6 +2,7 @@
 import sys
 import robin_stocks.helper as helper
 import robin_stocks.urls as urls
+import robin_stocks.stocks as stocks
 
 def spinning_cursor():
     """ This is a generator function to yield a character. """
@@ -119,19 +120,20 @@ def find_tradable_options(symbol, expirationDate=None, strikePrice=None, optionT
     :type optionType: Optional[str]
     :param info: Will filter the results to get a specific value.
     :type info: Optional[str]
-    :returns: Returns a list of dictionaries of key/value pairs for all calls of the stock. If info parameter is provided, \
-    a list of strings is returned where the strings are the value of the key that matches info.
+    :returns: Returns a list of dictionaries of key/value pairs for all calls of the stock.
+        If info parameter is provided, a list of strings is returned
+        where the strings are the value of the key that matches info.
 
     """
     try:
         symbol = symbol.upper().strip()
     except AttributeError as message:
-        print(message, file=helper.get_output())
+        print(message)
         return [None]
 
     url = urls.option_instruments()
     if not helper.id_for_chain(symbol):
-        print("Symbol {} is not valid for finding options.".format(symbol), file=helper.get_output())
+        print("Symbol {} is not valid for finding options.".format(symbol))
         return [None]
 
     payload = {'chain_id': helper.id_for_chain(symbol),
@@ -139,7 +141,7 @@ def find_tradable_options(symbol, expirationDate=None, strikePrice=None, optionT
                'state': 'active'}
 
     if expirationDate:
-        payload['expiration_date'] = expirationDate
+        payload['expiration_dates'] = expirationDate
     if strikePrice:
         payload['strike_price'] = strikePrice
     if optionType:
@@ -262,6 +264,76 @@ def find_options_by_expiration_and_strike(inputSymbols, expirationDate, strikePr
         data.extend(filteredOptions)
 
     return helper.filter(data, info)
+
+
+def find_options_by_expiration_and_strike_count(inputSymbols, expirationDate, strikeCount, optionType=None, info=None):
+    """Returns a list of all the option orders that match the search parameters
+
+    :param inputSymbols: The ticker of either a single stock or a list of stocks.
+    :type inputSymbols: str
+    :param expirationDate: Represents the expiration date in the format YYYY-MM-DD.
+    :type expirationDate: str
+    :param optionType: Can be either 'call' or 'put' or leave blank to get both.
+    :type optionType: Optional[str]
+    :param strikeCount: Number of strikes to return above and below ATM price
+    :type strikeCount: intd
+    :param info: Will filter the results to get a specific value.
+    :type info: Optional[str]
+    :returns: Returns a list of dictionaries of key/value pairs for all options
+        of the stock that match the search parameters.
+        If info parameter is provided, a list of strings is
+        returned where the strings are the value of the key that matches info.
+    """
+
+    try:
+        symbols = helper.inputs_to_set(inputSymbols)
+        if optionType:
+            optionType = optionType.lower().strip()
+    except AttributeError as message:
+        print(message)
+        return [None]
+
+    data = []
+    for symbol in symbols:
+        underlying = float(stocks.get_latest_price(symbol)[0])
+        allOptions = find_tradable_options(symbol, expirationDate, None, optionType, None)
+        strikes = []
+        for each in allOptions:
+            strikePrice = each['strike_price']
+            strikes.append(strikePrice) if strikePrice not in strikes else strikes
+        sortedStrikes = list(map(float, strikes))
+        sortedStrikes.sort()
+        filteredStrikes = find_strikes(sortedStrikes, strikeCount, underlying)
+        for x in range(0, len(filteredStrikes)):
+            filteredStrikes[x] = '%.4f' % filteredStrikes[x]
+
+        x = 0
+        while x < len(allOptions):
+            if allOptions[x]['strike_price'] not in filteredStrikes:
+                allOptions.remove(allOptions[x])
+            else:
+                x = x + 1
+
+        for item in allOptions:
+            marketData = get_option_market_data_by_id(item['id'])
+            item.update(marketData)
+            write_spinner()
+
+        data.extend(allOptions)
+
+    return(helper.filter(data, info))
+
+
+def find_strikes(allStrikes, strikeCount, underlying):
+    ATMIndex = 0
+    for x in range(0, len(allStrikes)):
+        if allStrikes[x] >= underlying:
+            ATMIndex = x
+            break
+    if (allStrikes[ATMIndex] == underlying):
+        return allStrikes[ATMIndex - strikeCount:ATMIndex + strikeCount + 1]
+    else:
+        return allStrikes[ATMIndex - strikeCount:ATMIndex + strikeCount]
 
 
 def find_options_by_specific_profitability(inputSymbols, expirationDate=None, strikePrice=None, optionType=None, typeProfit="chance_of_profit_short", profitFloor=0.0, profitCeiling=1.0, info=None):
