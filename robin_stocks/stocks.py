@@ -570,13 +570,15 @@ def get_stock_historicals(inputSymbols, interval='hour', span='week', bounds='re
 
     histData = []
     for count, item in enumerate(data):
+        histData_single = []
         if (len(item['historicals']) == 0):
             print(helper.error_ticker_does_not_exist(symbols[count]), file=helper.get_output())
             continue
         stockSymbol = item['symbol']
         for subitem in item['historicals']:
             subitem['symbol'] = stockSymbol
-            histData.append(subitem)
+            histData_single.append(subitem)
+        histData.append(histData_single)
 
     return(helper.filter(histData, info))
 

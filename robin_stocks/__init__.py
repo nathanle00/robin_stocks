@@ -71,6 +71,7 @@ from .options import get_aggregate_positions,                           \
                      find_options_by_expiration,                        \
                      find_options_by_strike,                            \
                      find_options_by_expiration_and_strike,             \
+                     find_options_by_expiration_and_strike_count,       \
                      find_options_by_specific_profitability,            \
                      get_option_market_data_by_id,                      \
                      get_option_market_data,                            \

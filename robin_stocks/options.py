@@ -14,12 +14,12 @@ spinner = spinning_cursor()
 
 def write_spinner():
     """ Function to create a spinning cursor to tell user that the code is working on getting market data. """
-    if helper.get_output()==sys.stdout:
+    if helper.get_output() == sys.stdout:
         marketString = 'Loading Market Data '
         sys.stdout.write(marketString)
         sys.stdout.write(next(spinner))
         sys.stdout.flush()
-        sys.stdout.write('\b'*(len(marketString)+1))
+        sys.stdout.write('\b' * (len(marketString) + 1))
 
 @helper.login_required
 def get_aggregate_positions(info=None):
@@ -162,8 +162,8 @@ def find_options_by_expiration(inputSymbols, expirationDate, optionType=None, in
     :type optionType: Optional[str]
     :param info: Will filter the results to get a specific value.
     :type info: Optional[str]
-    :returns: Returns a list of dictionaries of key/value pairs for all options of the stock that match the search parameters. \
-    If info parameter is provided, a list of strings is returned where the strings are the value of the key that matches info.
+    :returns: Returns a list of dictionaries of key/value pairs for all options of the stock that match the search parameters.
+        If info parameter is provided, a list of strings is returned where the strings are the value of the key that matches info.
 
     """
     try:
@@ -336,7 +336,8 @@ def find_strikes(allStrikes, strikeCount, underlying):
         return allStrikes[ATMIndex - strikeCount:ATMIndex + strikeCount]
 
 
-def find_options_by_specific_profitability(inputSymbols, expirationDate=None, strikePrice=None, optionType=None, typeProfit="chance_of_profit_short", profitFloor=0.0, profitCeiling=1.0, info=None):
+def find_options_by_specific_profitability(inputSymbols, expirationDate=None, strikePrice=None, optionType=None,
+        typeProfit="chance_of_profit_short", profitFloor=0.0, profitCeiling=1.0, info=None):
     """Returns a list of option market data for several stock tickers that match a range of profitability.
 
     :param inputSymbols: May be a single stock ticker or a list of stock tickers.
