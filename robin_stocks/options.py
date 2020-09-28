@@ -305,21 +305,22 @@ def find_options_by_expiration_and_strike_count(inputSymbols, expirationDate, st
         sortedStrikes.sort()
         filteredStrikes = find_strikes(sortedStrikes, strikeCount, underlying)
         for x in range(0, len(filteredStrikes)):
-            filteredStrikes[x] = '%.3f' % filteredStrikes[x]
-
+            filteredStrikes[x] = '%.4f' % filteredStrikes[x]    # DO NOT CHANGE ROUNDING
+        
         x = 0
         while x < len(allOptions):
             if allOptions[x]['strike_price'] not in filteredStrikes:
                 allOptions.remove(allOptions[x])
             else:
                 x = x + 1
-
+        
         for item in allOptions:
             marketData = get_option_market_data_by_id(item['id'])
             item.update(marketData)
             # write_spinner()
-
+        
         data.extend(allOptions)
+        
 
     return(helper.filter(data, info))
 
