@@ -582,6 +582,59 @@ def get_stock_historicals(inputSymbols, interval='hour', span='week', bounds='re
 
     return(helper.filter(histData, info))
 
+def chunks(lst, n):
+    """Yield successive n-sized chunks from lst."""
+    for i in range(0, len(lst), n):
+        if i + n <= len(lst):
+            yield lst[i:i + n]
+        else:
+            yield lst[i:]
+
+# Get weeklys from stored file and extract relevant data to list
+def get_ADR_historicals(wk_list):
+    wk_list_chunks = list(chunks(wk_list, 50))
+
+    wk_hist = []
+    for chunk in wk_list_chunks:
+        wk_hist.extend(get_stock_historicals(chunk, interval='day', span='3month'))
+
+    wk_historicals = []
+    if (wk_hist[0] is not None):
+        for symbol in wk_hist:
+            wk_historicals.append([[x['symbol'], float(x['open_price']), float(x['close_price']),
+                    round(float(x['high_price']) - float(x['low_price']), 6), int(x['volume'])] for x in symbol])
+    return wk_historicals
+
+# Filer and sort stocks by close-open average, volume, ADR, and max number of stocks
+def sort_stocks_by_volatility_ADR(symbols, min_CO, min_volume, min_ADR, max_stock_count):
+    wk_hist_HLV = get_ADR_historicals(symbols)
+    wk_volume_filt = []
+    for ticker in wk_hist_HLV:
+        volumes = [datapoint[4] for datapoint in ticker]
+        avgVolume = int(sum(volumes) / len(volumes))
+        if (avgVolume >= min_volume):
+            wk_volume_filt.append(ticker)
+
+    wk_ADR_filt = []
+    ADRs = []
+    for ticker in wk_volume_filt:
+        CO_prices = [round((datapoint[1] + datapoint[2]) / 2, 4) for datapoint in ticker]
+        HL_diffs = [datapoint[3] for datapoint in ticker]
+        ADR_list = [round(i / j, 4) for i, j in zip(HL_diffs, CO_prices)]
+        avgADR = round(sum(ADR_list) / len(ADR_list), 4)
+        if avgADR >= min_ADR and CO_prices[-1] >= min_CO:
+            wk_ADR_filt.append(ticker)
+            ADRs.append(avgADR)
+
+    wk_ADR_filt_sym_list = [ticker[0][0] for ticker in wk_ADR_filt]
+    ADRs_sorted = sorted(range(len(ADRs)), key=lambda k: ADRs[k], reverse=True)
+    if len(wk_ADR_filt) > max_stock_count:
+        # return [ADRs[x] for x in ADRs_sorted][:max_stock_count], [wk_ADR_filt_sym_list[x] for x in ADRs_sorted][:max_stock_count]
+        return [wk_ADR_filt_sym_list[x] for x in ADRs_sorted][:max_stock_count]
+    else:
+        # return [ADRs[x] for x in ADRs_sorted], [ticker[0][0] for ticker in wk_ADR_filt]
+        return [ticker[0][0] for ticker in wk_ADR_filt]
+
 
 def get_stock_quote_by_id(stock_id, info=None):
     """

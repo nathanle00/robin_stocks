@@ -144,6 +144,7 @@ from .stocks import get_quotes,                 \
                     get_splits,                 \
                     find_instrument_data,       \
                     get_stock_historicals,      \
+                    sort_stocks_by_volatility_ADR, \
                     get_pricebook_by_id,        \
                     get_pricebook_by_symbol,    \
                     get_stock_quote_by_id,      \
